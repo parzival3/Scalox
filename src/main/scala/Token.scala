@@ -21,4 +21,4 @@ enum TokenType:
   EOF
 case class Something(value: Int)
 
-case class Token(tokenType: TokenType, lexeme: String, literal: Something, line: Int)
+case class Token(tokenType: TokenType, lexeme: String, literal: Option[AnyVal], line: Int)

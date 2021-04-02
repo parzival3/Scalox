@@ -12,15 +12,15 @@ class slox:
   @tailrec
   final def run(program: String, hadError: Boolean): Exit =
     val scanner = Scanner(program)
-    val scannerResult = scanner.scanTokens(program.toList, -1, -1, 1, Nil)
+    val scannerResult = scanner.scanTokens(ScannerState(program.toList, 0, 1, Nil))
     scannerResult match
       case Right(tokens) =>
         tokens.map(println)
         if !hadError then Exit.SUCCESS else Exit.EX_USAGE
-      case Left(start, current, line) =>
+      case Left(start, line) =>
         error(line, "Unexpected character.")
         // If there is an error let's catch as many error as possible
-        run(program.substring(current), true)
+        run(program.substring(start + 1), true)
 
   def error(line: Int, message: String): Unit =
     report(line, "", message)
@@ -30,7 +30,7 @@ class slox:
 
   def runFile(program: String): Exit =
     run(Source.fromFile(program, "UTF-8").toString(), false)
-  
+
   @tailrec
   final def runPrompt(): Exit =
     print(s"${GREEN}> ")
