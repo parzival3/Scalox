@@ -35,7 +35,7 @@ class slox:
   final def runPrompt(): Exit =
     print(s"${GREEN}> ")
     val line = io.StdIn.readLine()
-    if !line.isBlank then
+    if !line.isEmpty then
       run(line, false)
       runPrompt()
     else
