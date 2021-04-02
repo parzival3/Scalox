@@ -6,7 +6,8 @@ case class ScannerState(program: List[Char], start: Int, line: Int, prevTokens: 
 
 class Scanner(completeProgram: String):
   extension (program: List[Char])
-    def nextTokenIs(char: Char): Boolean =
+    @tailrec
+    final def nextTokenIs(char: Char): Boolean =
       program match
         case x :: xs =>
           if (x == char) then true
@@ -16,7 +17,8 @@ class Scanner(completeProgram: String):
             false
         case _ => false
 
-    def removeCommentLine: List[Char] =
+    @tailrec
+    final def removeCommentLine: List[Char] =
       program match
         case x :: xs =>
           // TODO : check for null termination and scala strings
@@ -27,7 +29,8 @@ class Scanner(completeProgram: String):
             program
         case nil => program
 
-    def findMatching(char: Char): Option[List[Char]] =
+    @tailrec
+    final def findMatching(char: Char): Option[List[Char]] =
       program match
         case x :: xs =>
           if x == '\n' || x == '\r' then
@@ -37,6 +40,17 @@ class Scanner(completeProgram: String):
           else
             xs findMatching (char)
         case _ => None
+
+    @tailrec
+    final def findIdentifier: Option[List[Char]] =
+      program match
+        case x :: xs =>
+          if x.isDigit || x.isLetter || x == '_' then
+            xs.findIdentifier
+          else
+            None
+        case Nil =>
+            Some(Nil)
 
     def findDigit: Option[List[Char]] =
       var hasDecimal = false
@@ -57,25 +71,30 @@ class Scanner(completeProgram: String):
                     hasDecimal = true
                     findEnd(xs)
             case '\n' | '\r' | ' ' =>
-                if  (hasDecimal && digitAfterPoint) || (!hasDecimal && !digitAfterPoint) then
+                if  (hasDecimal && digitAfterPoint)  then
                   Some(xs)
-                else
+                else if hasDecimal then
                   None
+                else
+                  Some(string)
           case Nil =>
-                if  (hasDecimal && digitAfterPoint) || (!hasDecimal && !digitAfterPoint) then
-                  Some(Nil)
-                else
-                  None
-
+                  // TODO : we shouldn't be here
+                  Some(string)
       findEnd(program)
 
 
-  def scanTokens(status: ScannerState): Either[(Int, Int), List[Token]] =
+  @tailrec
+  final def scanTokens(status: ScannerState): Either[(Int, Int), List[Token]] =
+    object Digit:
+        def unapply(c: Char): Boolean = c.isDigit
+    object Letter:
+        def unapply(c: Char): Boolean = c.isLetter
 
     def createToken(tokentype: TokenType, string: String, line: Int): Token =
       tokentype match
         case TokenType.STRING => Token(tokentype, string, Some(string), line)
         case TokenType.NUMBER => Token(tokentype, string, Some(string.toDouble), line)
+        case TokenType.IDENTIFIER => Token(Keywords.kmap.getOrElse(string, TokenType.IDENTIFIER), string, None, line)
         case _  => Token(tokentype, string, None, line)
 
     def updateState(restProgram: List[Char], tokentype: Option[TokenType], line: Int): ScannerState =
@@ -132,10 +151,16 @@ class Scanner(completeProgram: String):
             case Some(p) =>
               scanTokens(updateState(p, Some(TokenType.STRING), status.line))
             case None => Left(status.start, status.line)
-        case '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '0' =>
+        case c @ Digit() =>
           xs.findDigit match
             case Some(d) =>
               scanTokens(updateState(d, Some(TokenType.NUMBER), status.line))
             case None => Left(status.start, status.line)
-
+        case c @ Letter() =>
+          xs.findIdentifier match
+            case Some(i) =>
+              scanTokens(updateState(i, Some(TokenType.IDENTIFIER), status.line))
+            case None => Left(status.start, status.line)
         case _ => Left(status.start, status.line)
+      case Nil =>
+        Left(status.start, status.line)
