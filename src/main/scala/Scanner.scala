@@ -15,7 +15,6 @@ class Scanner(completeProgram: String):
             false
         case _ => false
 
-  extension (program: List[Char])
     def removeCommentLine: List[Char] =
       program match
         case x :: xs =>
@@ -27,7 +26,6 @@ class Scanner(completeProgram: String):
             program
         case nil => program
 
-  extension (program: List[Char])
     def findMatching(char: Char): Option[List[Char]] =
       program match
         case x :: xs =>
@@ -39,7 +37,6 @@ class Scanner(completeProgram: String):
             xs findMatching (char)
         case _ => None
 
-  extension (program: List[Char])
     def findDigit: Option[List[Char]] =
       program match
         case x :: xs =>
