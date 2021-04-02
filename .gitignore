@@ -3,3 +3,11 @@ target/*
 .idea/*
 project/project/*
 project/target/*
+.bloop/*
+.metals/*
+project/.bloop/*
+project/metals.sbt
+src/main/scala/.DS_Store
+src/main/scala/.bsp/*
+src/main/scala/project/*
+src/main/scala/target/*
