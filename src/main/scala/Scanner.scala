@@ -1,4 +1,5 @@
 package github.parzival3.lox
+import scala.annotation.tailrec
 
 
 case class ScannerState(program: List[Char], start: Int, line: Int, prevTokens: List[Token])
@@ -38,15 +39,35 @@ class Scanner(completeProgram: String):
         case _ => None
 
     def findDigit: Option[List[Char]] =
-      program match
-        case x :: xs =>
-          if x.isDigit || x == '.' then
-            xs.findDigit
-          else if x.isWhitespace || x == '\n' || x == '\r' then
-            Some(xs)
-          else
-            None
-        case _ => Some(program)
+      var hasDecimal = false
+      var digitAfterPoint = false
+
+      @tailrec
+      def findEnd(string: List[Char]): Option[List[Char]] =
+        string match
+          case x :: xs => x match
+            case '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '0' =>
+                if hasDecimal then
+                  digitAfterPoint = true
+                findEnd(xs)
+            case '.' =>
+                if hasDecimal then
+                    None
+                else
+                    hasDecimal = true
+                    findEnd(xs)
+            case '\n' | '\r' | ' ' =>
+                if  (hasDecimal && digitAfterPoint) || (!hasDecimal && !digitAfterPoint) then
+                  Some(xs)
+                else
+                  None
+          case Nil =>
+                if  (hasDecimal && digitAfterPoint) || (!hasDecimal && !digitAfterPoint) then
+                  Some(Nil)
+                else
+                  None
+
+      findEnd(program)
 
 
   def scanTokens(status: ScannerState): Either[(Int, Int), List[Token]] =
@@ -102,11 +123,7 @@ class Scanner(completeProgram: String):
             scanTokens(updateState(xs.tail.removeCommentLine, None, status.line))
           else
             scanTokens(updateState(xs, Some(TokenType.SLASH), status.line))
-        case '\r' =>
-          scanTokens(updateState(xs, None, status.line))
-        case ' ' =>
-          scanTokens(updateState(xs, None, status.line))
-        case '\t' =>
+        case '\r'| ' ' | '\t'  =>
           scanTokens(updateState(xs, None, status.line))
         case '\n' =>
           scanTokens(updateState(xs, None, status.line + 1))
