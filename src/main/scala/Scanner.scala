@@ -47,6 +47,8 @@ class Scanner(completeProgram: String):
         case x :: xs =>
           if x.isDigit || x.isLetter || x == '_' then
             xs.findIdentifier
+          else if x.isWhitespace || x == '\n' || x == '\r' then
+            Some(xs)
           else
             None
         case Nil =>
