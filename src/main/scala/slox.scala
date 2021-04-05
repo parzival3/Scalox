@@ -7,7 +7,6 @@ import Console.{BLUE, GREEN, RED, RESET}
 import scala.annotation.tailrec
 
 class slox:
-  // TODO: please change this
 
   @tailrec
   final def run(program: String, hadError: Boolean): Exit =
@@ -29,7 +28,8 @@ class slox:
     System.err.println(s"[line $line] Error $where: $message")
 
   def runFile(program: String): Exit =
-    run(Source.fromFile(program, "UTF-8").toString(), false)
+    val stringProgram: String = Source.fromFile(program, "UTF-8").getLines.mkString
+    run(stringProgram, false)
 
   @tailrec
   final def runPrompt(): Exit =
