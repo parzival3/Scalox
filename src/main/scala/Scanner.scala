@@ -5,6 +5,13 @@ import scala.annotation.tailrec
 case class ScannerState(program: List[Char], start: Int, line: Int, prevTokens: List[Token])
 
 class Scanner(completeProgram: String):
+  object Digit:
+      def unapply(c: Char): Boolean = c.isDigit
+  object Letter:
+      def unapply(c: Char): Boolean = c.isLetter
+  object SpaceOrTermination:
+      def unapply(c: Char): Boolean = c.isWhitespace || c == '\n' || c == '\r'
+
   extension (program: List[Char])
     @tailrec
     final def nextTokenIs(char: Char): Boolean =
@@ -62,7 +69,7 @@ class Scanner(completeProgram: String):
       def findEnd(string: List[Char]): Option[List[Char]] =
         string match
           case x :: xs => x match
-            case '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '0' =>
+            case c @ Digit() =>
                 if hasDecimal then
                   digitAfterPoint = true
                 findEnd(xs)
@@ -72,7 +79,7 @@ class Scanner(completeProgram: String):
                 else
                     hasDecimal = true
                     findEnd(xs)
-            case '\n' | '\r' | ' ' =>
+            case c @ SpaceOrTermination() =>
                 if  (hasDecimal && digitAfterPoint)  then
                   Some(xs)
                 else if hasDecimal then
@@ -87,10 +94,6 @@ class Scanner(completeProgram: String):
 
   @tailrec
   final def scanTokens(status: ScannerState): Either[(Int, Int), List[Token]] =
-    object Digit:
-        def unapply(c: Char): Boolean = c.isDigit
-    object Letter:
-        def unapply(c: Char): Boolean = c.isLetter
 
     def createToken(tokentype: TokenType, string: String, line: Int): Token =
       tokentype match
@@ -144,10 +147,11 @@ class Scanner(completeProgram: String):
             scanTokens(updateState(xs.tail.removeCommentLine, None, status.line))
           else
             scanTokens(updateState(xs, Some(TokenType.SLASH), status.line))
-        case '\r'| ' ' | '\t'  =>
-          scanTokens(updateState(xs, None, status.line))
-        case '\n' =>
-          scanTokens(updateState(xs, None, status.line + 1))
+        case c @ SpaceOrTermination()  =>
+          if c == '\n' then
+            scanTokens(updateState(xs, None, status.line + 1))
+          else
+            scanTokens(updateState(xs, None, status.line))
         case '\"' =>
           xs.findMatching('\"') match
             case Some(p) =>
