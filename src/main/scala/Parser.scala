@@ -1,14 +1,23 @@
 package github.parzival3.lox
 
-case class ParserState(tokens: List[Token], expr: Option[Expr])
+case class ParserState(tokens: List[Token], expr: Option[Expr], error: Boolean = false)
 
 class Parser(tokens: List[Token]):
 
     def matchAndApply(state: ParserState, matchingTokens: List[TokenType], func: (ParserState) => ParserState): ParserState =
-      if matchingTokens.exists(x => x == state.tokens.head.tokenType) then
-          val newState = func(state)
-          val newExpr = Binary(state.expr.get, state.tokens.head, newState.expr.get)
-          matchAndApply(ParserState(state.tokens.tail, Some(newExpr)), matchingTokens, func)
+      println("Hello")
+      if state.tokens != Nil then
+        if matchingTokens.exists(x => x == state.tokens.head.tokenType) then
+            val newState = func(state.copy(tokens = state.tokens.tail))
+            val newExpr = Binary(state.expr.get, state.tokens.head, newState.expr.get)
+
+            if newState.tokens.isEmpty || newState.tokens.tails.isEmpty then
+              ParserState(Nil, Some(newExpr))
+            else
+              matchAndApply(ParserState(newState.tokens.tail, Some(newExpr)), matchingTokens, func)
+
+        else
+          state
       else
         state
 
@@ -28,9 +37,13 @@ class Parser(tokens: List[Token]):
       matchAndApply(cState, grammarTokens, term)
 
     def term(state: ParserState): ParserState =
-      val cState = factor(state)
+
       val grammarTokens = List[TokenType](TokenType.PLUS, TokenType.MINUS)
-      matchAndApply(cState, grammarTokens, factor)
+      if state.expr.isDefined then
+        matchAndApply(state, grammarTokens, factor)
+      else
+        val cState = factor(state)
+        matchAndApply(cState, grammarTokens, factor)
 
     def factor(state: ParserState): ParserState =
       val cState = unary(state)
@@ -52,10 +65,17 @@ class Parser(tokens: List[Token]):
       val matchingTokens = List[TokenType](TokenType.NUMBER)
       if matchingTokens.exists(x => x == state.tokens.head.tokenType) then
          val expr = Literal(state.tokens.head.literal.get)
+         println(state.tokens.tail)
          ParserState(state.tokens.tail, Some(expr))
       else
-        state.copy(expr = None)
+        state.copy(expr = None, error = true)
 
-
-    def parse: Expr =
-      unary(ParserState(tokens, None)).expr.get
+    def parse: ParserState =
+      val state = term(ParserState(tokens, None))
+      state match
+        case ParserState(Nil, Some(x), false) => state
+        case ParserState(tokens, Some(x), false) =>
+            println(state)
+            term(state)
+        case ParserState(tokens, _, true) => state
+        case _ => state

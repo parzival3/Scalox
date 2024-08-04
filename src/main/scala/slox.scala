@@ -14,7 +14,7 @@ class slox:
     val scannerResult = scanner.scanTokens(ScannerState(program.toList, 0, 1, Nil))
     scannerResult match
       case Right(tokens) =>
-        tokens.map(println)
+        println(prettyPrint(Parser(tokens).parse.expr.get))
         if !hadError then Exit.SUCCESS else Exit.EX_USAGE
       case Left(start, line) =>
         error(line, "Unexpected character.")

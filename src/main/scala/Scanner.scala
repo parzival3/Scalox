@@ -122,6 +122,7 @@ class Scanner(completeProgram: String):
         case '+' => scanTokens(updateState(xs, Some(TokenType.PLUS), status.line))
         case ';' => scanTokens(updateState(xs, Some(TokenType.SEMICOLON), status.line))
         case '*' => scanTokens(updateState(xs, Some(TokenType.STAR), status.line))
+        case '-' => scanTokens(updateState(xs, Some(TokenType.MINUS), status.line))
         case '!' =>
           if xs.nextTokenIs('=') then
             scanTokens(updateState(xs.tail, Some(TokenType.BANG_EQUAL), status.line))
